@@ -472,7 +472,7 @@ fi
 - Positiver Testdurchlauf mit **Jeffrey Epstein**:  
 ![Raspi Match Jeffrey Epstein](assets/raspi_new_test_jeffrey_epstein_success.png)
 
-- **Negativ-Test** (`Jeffrey_Epstein2.jpg`): Da hier der erwartete Name (`Jeffrey Epstein2`) nicht mit dem von AWS erkannten Namen (`Jeffrey Epstein`) übereinstimmte, hat das erweiterte Testskript korrekterweise ein asgeschlagenes Resultat (`FEHLGESCHLAGEN`) ausgegeben:  
+- **Negativ-Test** (`Jeffrey_Epstein2.jpg`): Da hier der erwartete Name (`Jeffrey Epstein2`) nicht mit dem von AWS erkannten Namen (`Jeffrey Epstein`) übereinstimmte, hat das erweiterte Testskript korrekterweise `FEHLGESCHLAGEN` ausgegeben:  
 ![Raspi Match Jeffrey Epstein Fail](assets/raspi_new_test_jeffrey_epstein_fail.png)
 
 Dieses Vorgehen demonstriert sehr gut, dass die neu implementierte Namens-Validierung robust funktioniert und inkorrekte Dateibezeichnungen als Fehler deklariert.
