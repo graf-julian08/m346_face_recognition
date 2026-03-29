@@ -1,46 +1,75 @@
 #!/bin/bash
 
-# Lese die Bucket-Namen, die vom Init.sh erstellt wurden, ein
+echo "=============================================="
+echo "Cloud Face Recognition Test wird gestartet..."
+echo "=============================================="
+
+# Prüfen, ob buckets.txt existiert
 if [ ! -f "buckets.txt" ]; then
-    echo "Fehler: buckets.txt nicht gefunden. Bitte zuerst Init.sh ausführen."
+    echo "Fehler: buckets.txt wurde nicht gefunden."
+    echo "Bitte zuerst das Setup-Skript Init.sh ausführen."
     exit 1
 fi
 
+# Bucket-Namen auslesen
 IN_BUCKET=$(sed -n '1p' buckets.txt)
 OUT_BUCKET=$(sed -n '2p' buckets.txt)
 
 TEST_BILD="testbild.jpg"
 
+# Prüfen, ob das Testbild existiert
 if [ ! -f "$TEST_BILD" ]; then
-    echo "Fehler: Datei $TEST_BILD nicht gefunden. Bitte ein Foto im selben Ordner ablegen."
+    echo "Fehler: Die Datei $TEST_BILD wurde nicht gefunden."
+    echo "Bitte legen Sie ein Testbild im selben Ordner ab."
     exit 1
 fi
 
-echo "Lade $TEST_BILD in den Input-Bucket ($IN_BUCKET) hoch..."
-aws s3 cp $TEST_BILD s3://$IN_BUCKET/ --region us-east-1
+START=$(date +%s)
 
-echo "Warte 10 Sekunden auf die Verarbeitung durch die AWS Cloud..."
+echo "[1/4] Upload (завантаження) des Testbildes in den Input-S3-Bucket..."
+aws s3 cp "$TEST_BILD" "s3://$IN_BUCKET/" --region us-east-1
+
+if [ $? -ne 0 ]; then
+    echo "Fehler: Upload in den Input-Bucket ist fehlgeschlagen."
+    exit 1
+fi
+
+echo "[2/4] Verarbeitung (обробка) durch AWS Lambda und Rekognition wird abgewartet..."
 sleep 10
 
-echo "Lade generierte JSON-Datei herunter..."
-aws s3 cp s3://$OUT_BUCKET/$TEST_BILD.json result.json --region us-east-1
+echo "[3/4] Download (завантаження результату) der generierten JSON-Datei aus dem Output-S3-Bucket..."
+aws s3 cp "s3://$OUT_BUCKET/$TEST_BILD.json" result.json --region us-east-1
+
+if [ $? -ne 0 ]; then
+    echo "Fehler: Die Resultat-Datei konnte nicht aus dem Output-Bucket heruntergeladen werden."
+    exit 1
+fi
 
 echo "----------------------------------------------------"
-echo "Ergebnis der Cloud Face Recognition:"
+echo "[4/4] Analyseergebnis (результат аналізу):"
 
-# Kriterium A7: Simpler Python-Einzeiler zum Auslesen, damit man kein "jq" installieren muss
 python3 -c "
 import json
 try:
-    with open('result.json') as f:
+    with open('result.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
-        if len(data['CelebrityFaces']) > 0:
-            name = data['CelebrityFaces'][0]['Name']
-            conf = data['CelebrityFaces'][0]['MatchConfidence']
-            print(f'> Erkannte Person: {name} (Wahrscheinlichkeit: {conf:.2f}%)')
-        else:
-            print('> Es wurde keine prominente Person auf diesem Bild erkannt.')
+
+    if len(data.get('CelebrityFaces', [])) > 0:
+        name = data['CelebrityFaces'][0]['Name']
+        conf = data['CelebrityFaces'][0]['MatchConfidence']
+        print(f'> Erkannte Person: {name}')
+        print(f'> Match-Confidence (точність збігу): {conf:.2f}%')
+    else:
+        print('> Es wurde keine prominente Person auf diesem Bild erkannt.')
+
 except Exception as e:
-    print('> Fehler beim Lesen der Analysedaten.')
+    print('> Fehler beim Lesen oder Verarbeiten der Analysedaten.')
 "
+
+END=$(date +%s)
+DAUER=$((END - START))
+
 echo "----------------------------------------------------"
+echo "Test erfolgreich abgeschlossen."
+echo "Ausführungszeit (час виконання): ${DAUER} Sekunden"
+echo "=============================================="
