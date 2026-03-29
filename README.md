@@ -1,6 +1,6 @@
 # Projekt: Cloud Face Recognition (AWS)
 
-**Autoren:** Olha Vilkhova, Philipp Crista, Julian Graf  
+**Autoren:** Olha Vilkhova, Philipp Crista und Julian Graf  
 **Modul:** 346 - Cloud Computing (GBS St. Gallen)
 
 ---
